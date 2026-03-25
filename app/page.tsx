@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { RotateCcw, Maximize, Minimize } from "lucide-react";
 import { PanInfo, motion } from "framer-motion";
 
@@ -16,6 +16,8 @@ export default function Home() {
 
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const pointerInputs = useRef<{ [id: number]: { startY: number; startTime: number } }>({});
 
   useEffect(() => {
     const onFullscreenChange = () => {
@@ -37,13 +39,27 @@ export default function Home() {
 
   const SWIPE_THRESHOLD = 30;
 
-  const handlePanEnd = (
+  const handlePointerDown = (e: React.PointerEvent) => {
+    pointerInputs.current[e.pointerId] = {
+      startY: e.clientY,
+      startTime: Date.now(),
+    };
+  };
+
+  const handlePointerUp = (
+    e: React.PointerEvent,
     team: "left" | "right",
-    info: PanInfo,
     type: "main" | "sub"
   ) => {
-    const isSwipeUp = info.offset.y < -SWIPE_THRESHOLD;
-    const isSwipeDown = info.offset.y > SWIPE_THRESHOLD;
+    const input = pointerInputs.current[e.pointerId];
+    if (!input) return;
+
+    const deltaY = e.clientY - input.startY;
+    const deltaTime = Date.now() - input.startTime;
+    delete pointerInputs.current[e.pointerId];
+
+    const isSwipeUp = deltaY < -SWIPE_THRESHOLD;
+    const isSwipeDown = deltaY > SWIPE_THRESHOLD;
 
     if (isSwipeUp) {
       if (team === "left") {
@@ -57,14 +73,12 @@ export default function Home() {
       } else {
         type === "main" ? setRightMainScore(s => Math.max(0, s - 1)) : setRightSubScore(s => Math.max(0, s - 1));
       }
-    }
-  };
-
-  const handleTap = (team: "left" | "right", type: "main" | "sub") => {
-    if (team === "left") {
-      type === "main" ? setLeftMainScore(s => s + 1) : setLeftSubScore(s => s + 1);
-    } else {
-      type === "main" ? setRightMainScore(s => s + 1) : setRightSubScore(s => s + 1);
+    } else if (deltaTime < 300 && Math.abs(deltaY) < 10) {
+      if (team === "left") {
+        type === "main" ? setLeftMainScore(s => s + 1) : setLeftSubScore(s => s + 1);
+      } else {
+        type === "main" ? setRightMainScore(s => s + 1) : setRightSubScore(s => s + 1);
+      }
     }
   };
 
@@ -95,8 +109,8 @@ export default function Home() {
         {/* Main Score Area */}
         <motion.div
           className="flex-1 w-full flex items-center justify-center cursor-pointer"
-          onPanEnd={(_, info) => handlePanEnd("left", info, "main")}
-          onTap={() => handleTap("left", "main")}
+          onPointerDown={handlePointerDown}
+          onPointerUp={(e) => handlePointerUp(e, "left", "main")}
         >
           <span className="text-[35vh] md:text-[45vh] leading-none font-bold text-white tracking-tighter drop-shadow-lg">
             {leftMainScore}
@@ -106,8 +120,8 @@ export default function Home() {
         {/* Sub Score Area */}
         <motion.div
           className="w-full h-[25%] flex items-center justify-center cursor-pointer bg-blue-700/30"
-          onPanEnd={(_, info) => handlePanEnd("left", info, "sub")}
-          onTap={() => handleTap("left", "sub")}
+          onPointerDown={handlePointerDown}
+          onPointerUp={(e) => handlePointerUp(e, "left", "sub")}
         >
           <span className="text-[12vh] md:text-[18vh] leading-none font-bold text-blue-100 drop-shadow-md pb-4">
             {leftSubScore}
@@ -132,8 +146,8 @@ export default function Home() {
         {/* Main Score Area */}
         <motion.div
           className="flex-1 w-full flex items-center justify-center cursor-pointer"
-          onPanEnd={(_, info) => handlePanEnd("right", info, "main")}
-          onTap={() => handleTap("right", "main")}
+          onPointerDown={handlePointerDown}
+          onPointerUp={(e) => handlePointerUp(e, "right", "main")}
         >
           <span className="text-[35vh] md:text-[45vh] leading-none font-bold text-white tracking-tighter drop-shadow-lg">
             {rightMainScore}
@@ -143,8 +157,8 @@ export default function Home() {
         {/* Sub Score Area */}
         <motion.div
           className="w-full h-[25%] flex items-center justify-center cursor-pointer bg-red-700/30"
-          onPanEnd={(_, info) => handlePanEnd("right", info, "sub")}
-          onTap={() => handleTap("right", "sub")}
+          onPointerDown={handlePointerDown}
+          onPointerUp={(e) => handlePointerUp(e, "right", "sub")}
         >
           <span className="text-[12vh] md:text-[18vh] leading-none font-bold text-red-100 drop-shadow-md pb-4">
             {rightSubScore}
