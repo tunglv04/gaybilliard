@@ -95,7 +95,7 @@ export default function Home() {
   };
 
   return (
-    <main className="flex w-full h-full bg-black overflow-hidden font-sans fixed inset-0">
+    <main className="flex w-full h-[100dvh] bg-black overflow-hidden font-sans">
       {/* Left Team (Blue) */}
       <div className="flex-1 bg-blue-600 flex flex-col items-center relative select-none touch-none">
         
@@ -144,7 +144,7 @@ export default function Home() {
           >
             −
           </button>
-          <span className="text-[12vh] md:text-[18vh] leading-none font-bold text-blue-100 drop-shadow-md pb-4 min-w-[2ch] text-center">
+          <span className="text-[12vh] md:text-[18vh] leading-none font-bold text-blue-100 drop-shadow-md min-w-[2ch] text-center">
             {leftSubScore}
           </span>
           <button 
@@ -205,7 +205,7 @@ export default function Home() {
           >
             −
           </button>
-          <span className="text-[12vh] md:text-[18vh] leading-none font-bold text-red-100 drop-shadow-md pb-4 min-w-[2ch] text-center">
+          <span className="text-[12vh] md:text-[18vh] leading-none font-bold text-red-100 drop-shadow-md min-w-[2ch] text-center">
             {rightSubScore}
           </span>
           <button 
