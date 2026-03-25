@@ -46,10 +46,19 @@ export default function Home() {
       e.preventDefault();
     };
     document.addEventListener("touchmove", preventTouchScroll, { passive: false });
+    
+    const preventTouchStart = (e: TouchEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName !== 'BUTTON' && target.tagName !== 'INPUT') {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener("touchstart", preventTouchStart, { passive: false });
 
     return () => {
       document.removeEventListener("fullscreenchange", onFullscreenChange);
       document.removeEventListener("touchmove", preventTouchScroll);
+      document.removeEventListener("touchstart", preventTouchStart);
       if (wakeLockRef.current) {
         wakeLockRef.current.release().catch(() => {});
       }
