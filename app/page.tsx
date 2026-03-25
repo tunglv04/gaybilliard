@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import { RotateCcw, Maximize, Minimize, ChevronUp, ChevronDown } from "lucide-react";
-import { PanInfo, motion } from "framer-motion";
 
 export default function Home() {
   const [leftName, setLeftName] = useState("Đội 1");
@@ -17,7 +16,6 @@ export default function Home() {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const pointerInputs = useRef<{ [id: number]: { startY: number; startTime: number } }>({});
   const wakeLockRef = useRef<any>(null);
 
   useEffect(() => {
@@ -47,9 +45,10 @@ export default function Home() {
     };
     document.addEventListener("touchmove", preventTouchScroll, { passive: false });
     
+    // Completely disable touchstart defaults except for buttons and inputs
     const preventTouchStart = (e: TouchEvent) => {
       const target = e.target as HTMLElement;
-      if (target.tagName !== 'BUTTON' && target.tagName !== 'INPUT') {
+      if (!target.closest('button') && !target.closest('input')) {
         e.preventDefault();
       }
     };
@@ -72,43 +71,6 @@ export default function Home() {
       });
     } else {
       document.exitFullscreen();
-    }
-  };
-
-  const SWIPE_THRESHOLD = 30;
-
-  const handlePointerDown = (e: React.PointerEvent) => {
-    pointerInputs.current[e.pointerId] = {
-      startY: e.clientY,
-      startTime: Date.now(),
-    };
-  };
-
-  const handlePointerUp = (
-    e: React.PointerEvent,
-    team: "left" | "right"
-  ) => {
-    const input = pointerInputs.current[e.pointerId];
-    if (!input) return;
-
-    const deltaY = e.clientY - input.startY;
-    delete pointerInputs.current[e.pointerId];
-
-    const isSwipeUp = deltaY < -SWIPE_THRESHOLD;
-    const isSwipeDown = deltaY > SWIPE_THRESHOLD;
-
-    if (isSwipeUp) {
-      if (team === "left") {
-        setLeftMainScore(s => s + 1);
-      } else {
-        setRightMainScore(s => s + 1);
-      }
-    } else if (isSwipeDown) {
-      if (team === "left") {
-        setLeftMainScore(s => Math.max(0, s - 1));
-      } else {
-        setRightMainScore(s => Math.max(0, s - 1));
-      }
     }
   };
 
@@ -137,19 +99,14 @@ export default function Home() {
         </div>
 
         {/* Main Score Area */}
-        <motion.div
-          className="flex-1 w-full flex flex-col items-center justify-center cursor-pointer relative"
-          onPointerDown={handlePointerDown}
-          onPointerUp={(e) => handlePointerUp(e, "left")}
-        >
+        <div className="flex-1 w-full flex flex-col items-center justify-center relative">
           {/* Up Arrow */}
           <button 
-            onPointerDown={e => e.stopPropagation()}
-            onPointerUp={e => e.stopPropagation()}
             onClick={() => setLeftMainScore(s => s + 1)}
-            className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center rounded-full hover:bg-white/10 text-white pointer-events-auto mb-[-2vh] z-10 transition-colors"
+            className="w-16 h-16 md:w-24 md:h-24 flex items-center justify-center rounded-full hover:bg-white/10 text-white pointer-events-auto mb-[-2vh] z-10 transition-colors active:scale-95"
+            title="Tăng điểm"
           >
-            <ChevronUp size={48} strokeWidth={3} />
+            <ChevronUp size={64} strokeWidth={3} />
           </button>
 
           <span className="text-[35vh] md:text-[45vh] leading-none font-bold text-white tracking-tighter drop-shadow-lg pointer-events-none">
@@ -158,20 +115,20 @@ export default function Home() {
 
           {/* Down Arrow */}
           <button 
-            onPointerDown={e => e.stopPropagation()}
-            onPointerUp={e => e.stopPropagation()}
             onClick={() => setLeftMainScore(s => Math.max(0, s - 1))}
-            className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center rounded-full hover:bg-white/10 text-white pointer-events-auto mt-[-2vh] z-10 transition-colors"
+            className="w-16 h-16 md:w-24 md:h-24 flex items-center justify-center rounded-full hover:bg-white/10 text-white pointer-events-auto mt-[-2vh] z-10 transition-colors active:scale-95"
+            title="Giảm điểm"
           >
-            <ChevronDown size={48} strokeWidth={3} />
+            <ChevronDown size={64} strokeWidth={3} />
           </button>
-        </motion.div>
+        </div>
 
         {/* Sub Score Area */}
         <div className="w-full h-[25%] flex items-center justify-center gap-8 md:gap-14 bg-blue-700/30">
           <button 
             onClick={() => setLeftSubScore(s => Math.max(0, s - 1))}
             className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center rounded-full hover:bg-white/10 text-blue-100 text-4xl md:text-5xl font-bold transition-colors active:scale-95 pointer-events-auto"
+            title="Giảm điểm phụ"
           >
             −
           </button>
@@ -181,6 +138,7 @@ export default function Home() {
           <button 
             onClick={() => setLeftSubScore(s => s + 1)}
             className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center rounded-full hover:bg-white/10 text-blue-100 text-4xl md:text-5xl font-bold transition-colors active:scale-95 pointer-events-auto"
+            title="Tăng điểm phụ"
           >
             +
           </button>
@@ -202,19 +160,14 @@ export default function Home() {
         </div>
 
         {/* Main Score Area */}
-        <motion.div
-          className="flex-1 w-full flex flex-col items-center justify-center cursor-pointer relative"
-          onPointerDown={handlePointerDown}
-          onPointerUp={(e) => handlePointerUp(e, "right")}
-        >
+        <div className="flex-1 w-full flex flex-col items-center justify-center relative">
           {/* Up Arrow */}
           <button 
-            onPointerDown={e => e.stopPropagation()}
-            onPointerUp={e => e.stopPropagation()}
             onClick={() => setRightMainScore(s => s + 1)}
-            className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center rounded-full hover:bg-white/10 text-white pointer-events-auto mb-[-2vh] z-10 transition-colors"
+            className="w-16 h-16 md:w-24 md:h-24 flex items-center justify-center rounded-full hover:bg-white/10 text-white pointer-events-auto mb-[-2vh] z-10 transition-colors active:scale-95"
+            title="Tăng điểm"
           >
-            <ChevronUp size={48} strokeWidth={3} />
+            <ChevronUp size={64} strokeWidth={3} />
           </button>
 
           <span className="text-[35vh] md:text-[45vh] leading-none font-bold text-white tracking-tighter drop-shadow-lg pointer-events-none">
@@ -223,20 +176,20 @@ export default function Home() {
 
           {/* Down Arrow */}
           <button 
-            onPointerDown={e => e.stopPropagation()}
-            onPointerUp={e => e.stopPropagation()}
             onClick={() => setRightMainScore(s => Math.max(0, s - 1))}
-            className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center rounded-full hover:bg-white/10 text-white pointer-events-auto mt-[-2vh] z-10 transition-colors"
+            className="w-16 h-16 md:w-24 md:h-24 flex items-center justify-center rounded-full hover:bg-white/10 text-white pointer-events-auto mt-[-2vh] z-10 transition-colors active:scale-95"
+            title="Giảm điểm"
           >
-            <ChevronDown size={48} strokeWidth={3} />
+            <ChevronDown size={64} strokeWidth={3} />
           </button>
-        </motion.div>
+        </div>
 
         {/* Sub Score Area */}
         <div className="w-full h-[25%] flex items-center justify-center gap-8 md:gap-14 bg-red-700/30">
           <button 
             onClick={() => setRightSubScore(s => Math.max(0, s - 1))}
             className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center rounded-full hover:bg-white/10 text-red-100 text-4xl md:text-5xl font-bold transition-colors active:scale-95 pointer-events-auto"
+            title="Giảm điểm phụ"
           >
             −
           </button>
@@ -246,6 +199,7 @@ export default function Home() {
           <button 
             onClick={() => setRightSubScore(s => s + 1)}
             className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center rounded-full hover:bg-white/10 text-red-100 text-4xl md:text-5xl font-bold transition-colors active:scale-95 pointer-events-auto"
+            title="Tăng điểm phụ"
           >
             +
           </button>
@@ -275,7 +229,7 @@ export default function Home() {
 
       {/* Reset Confirmation Overlay */}
       {showResetConfirm && (
-        <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50 p-6 backdrop-blur-sm">
+        <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50 p-6 backdrop-blur-sm pointer-events-auto">
           <div className="bg-zinc-900 rounded-3xl p-6 md:p-8 max-w-sm w-full text-center shadow-2xl border border-zinc-800 pointer-events-auto">
             <h2 className="text-white text-2xl md:text-3xl font-bold mb-3 md:mb-4">Làm mới tỉ số?</h2>
             <p className="text-zinc-400 mb-6 md:mb-8 text-sm md:text-base">
