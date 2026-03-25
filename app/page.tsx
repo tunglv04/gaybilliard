@@ -18,10 +18,27 @@ export default function Home() {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const pointerInputs = useRef<{ [id: number]: { startY: number; startTime: number } }>({});
+  const wakeLockRef = useRef<any>(null);
 
   useEffect(() => {
-    const onFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+    const onFullscreenChange = async () => {
+      const isFs = !!document.fullscreenElement;
+      setIsFullscreen(isFs);
+
+      if (isFs) {
+        try {
+          if ('wakeLock' in navigator) {
+            wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+          }
+        } catch (err) {
+          console.error('Wake lock failed', err);
+        }
+      } else {
+        if (wakeLockRef.current) {
+          wakeLockRef.current.release().catch(() => {});
+          wakeLockRef.current = null;
+        }
+      }
     };
     document.addEventListener("fullscreenchange", onFullscreenChange);
 
@@ -33,6 +50,9 @@ export default function Home() {
     return () => {
       document.removeEventListener("fullscreenchange", onFullscreenChange);
       document.removeEventListener("touchmove", preventTouchScroll);
+      if (wakeLockRef.current) {
+        wakeLockRef.current.release().catch(() => {});
+      }
     };
   }, []);
 
@@ -122,7 +142,7 @@ export default function Home() {
         <div className="w-full h-[25%] flex items-center justify-center gap-8 md:gap-14 bg-blue-700/30">
           <button 
             onClick={() => setLeftSubScore(s => Math.max(0, s - 1))}
-            className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center rounded-full bg-black/20 hover:bg-black/40 text-blue-100 text-4xl md:text-5xl font-bold transition-colors active:scale-95 pointer-events-auto"
+            className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center rounded-full hover:bg-white/10 text-blue-100 text-4xl md:text-5xl font-bold transition-colors active:scale-95 pointer-events-auto"
           >
             −
           </button>
@@ -131,7 +151,7 @@ export default function Home() {
           </span>
           <button 
             onClick={() => setLeftSubScore(s => s + 1)}
-            className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center rounded-full bg-black/20 hover:bg-black/40 text-blue-100 text-4xl md:text-5xl font-bold transition-colors active:scale-95 pointer-events-auto"
+            className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center rounded-full hover:bg-white/10 text-blue-100 text-4xl md:text-5xl font-bold transition-colors active:scale-95 pointer-events-auto"
           >
             +
           </button>
@@ -167,7 +187,7 @@ export default function Home() {
         <div className="w-full h-[25%] flex items-center justify-center gap-8 md:gap-14 bg-red-700/30">
           <button 
             onClick={() => setRightSubScore(s => Math.max(0, s - 1))}
-            className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center rounded-full bg-black/20 hover:bg-black/40 text-red-100 text-4xl md:text-5xl font-bold transition-colors active:scale-95 pointer-events-auto"
+            className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center rounded-full hover:bg-white/10 text-red-100 text-4xl md:text-5xl font-bold transition-colors active:scale-95 pointer-events-auto"
           >
             −
           </button>
@@ -176,7 +196,7 @@ export default function Home() {
           </span>
           <button 
             onClick={() => setRightSubScore(s => s + 1)}
-            className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center rounded-full bg-black/20 hover:bg-black/40 text-red-100 text-4xl md:text-5xl font-bold transition-colors active:scale-95 pointer-events-auto"
+            className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center rounded-full hover:bg-white/10 text-red-100 text-4xl md:text-5xl font-bold transition-colors active:scale-95 pointer-events-auto"
           >
             +
           </button>
@@ -195,10 +215,10 @@ export default function Home() {
         {isFullscreen ? <Minimize size={28} strokeWidth={2.5} /> : <Maximize size={28} strokeWidth={2.5} />}
       </button>
 
-      {/* Reset Button (Bottom Center) */}
+      {/* Reset Button (Absolute Center) */}
       <button
         onClick={() => setShowResetConfirm(true)}
-        className="absolute bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-black/60 hover:bg-black/80 p-3 md:p-4 text-white pointer-events-auto transition-all backdrop-blur-md shadow-xl border border-white/10 z-20"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/60 hover:bg-black/80 p-3 md:p-4 text-white pointer-events-auto transition-all backdrop-blur-md shadow-xl border border-white/10 z-20"
         title="Làm mới"
       >
         <RotateCcw size={28} strokeWidth={2.5} />
