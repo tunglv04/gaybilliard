@@ -20,7 +20,8 @@ export default function Home() {
 
   useEffect(() => {
     const onFullscreenChange = async () => {
-      const isFs = !!document.fullscreenElement;
+      const doc = document as any;
+      const isFs = !!(doc.fullscreenElement || doc.webkitFullscreenElement);
       setIsFullscreen(isFs);
 
       if (isFs) {
@@ -39,6 +40,7 @@ export default function Home() {
       }
     };
     document.addEventListener("fullscreenchange", onFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", onFullscreenChange);
 
     const preventTouchScroll = (e: TouchEvent) => {
       e.preventDefault();
@@ -56,6 +58,7 @@ export default function Home() {
 
     return () => {
       document.removeEventListener("fullscreenchange", onFullscreenChange);
+      document.removeEventListener("webkitfullscreenchange", onFullscreenChange);
       document.removeEventListener("touchmove", preventTouchScroll);
       document.removeEventListener("touchstart", preventTouchStart);
       if (wakeLockRef.current) {
@@ -65,12 +68,21 @@ export default function Home() {
   }, []);
 
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch((err) => {
-        console.log(`Error attempting to enable fullscreen: ${err.message}`);
-      });
+    const docElm = document.documentElement as any;
+    const requestFS = docElm.requestFullscreen || docElm.webkitRequestFullscreen;
+    const doc = document as any;
+
+    if (!doc.fullscreenElement && !doc.webkitFullscreenElement) {
+      if (requestFS) {
+        requestFS.call(docElm).catch((err: any) => {
+          console.log(`Error attempting to enable fullscreen: ${err.message}`);
+        });
+      } else {
+        alert("Trình duyệt Safari trên iPhone không hỗ trợ nút Phóng To tĩnh.\\n\\nĐỂ CHƠI TOÀN MÀN HÌNH:\\nHãy ấn biểu tượng [Chia sẻ] ở dưới cùng Safari và chọn [Thêm vào màn hình chính] (Add to Home Screen). Sau đó mở app từ màn hình chính!");
+      }
     } else {
-      document.exitFullscreen();
+      const exitFS = doc.exitFullscreen || doc.webkitExitFullscreen;
+      if (exitFS) exitFS.call(doc);
     }
   };
 
@@ -103,7 +115,7 @@ export default function Home() {
           {/* Up Arrow */}
           <button 
             onClick={() => setLeftMainScore(s => s + 1)}
-            className="w-16 h-16 md:w-24 md:h-24 flex items-center justify-center rounded-full hover:bg-white/10 text-white pointer-events-auto mb-[-2vh] z-10 transition-colors active:scale-95"
+            className="w-16 h-16 md:w-24 md:h-24 flex items-center justify-center rounded-full hover:bg-white/10 text-white/30 hover:text-white pointer-events-auto mb-[-2vh] z-10 transition-colors active:scale-95"
             title="Tăng điểm"
           >
             <ChevronUp size={64} strokeWidth={3} />
@@ -116,7 +128,7 @@ export default function Home() {
           {/* Down Arrow */}
           <button 
             onClick={() => setLeftMainScore(s => Math.max(0, s - 1))}
-            className="w-16 h-16 md:w-24 md:h-24 flex items-center justify-center rounded-full hover:bg-white/10 text-white pointer-events-auto mt-[-2vh] z-10 transition-colors active:scale-95"
+            className="w-16 h-16 md:w-24 md:h-24 flex items-center justify-center rounded-full hover:bg-white/10 text-white/30 hover:text-white pointer-events-auto mt-[-2vh] z-10 transition-colors active:scale-95"
             title="Giảm điểm"
           >
             <ChevronDown size={64} strokeWidth={3} />
@@ -127,7 +139,7 @@ export default function Home() {
         <div className="w-full h-[25%] flex items-center justify-center gap-8 md:gap-14 bg-blue-700/30">
           <button 
             onClick={() => setLeftSubScore(s => Math.max(0, s - 1))}
-            className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center rounded-full hover:bg-white/10 text-blue-100 text-4xl md:text-5xl font-bold transition-colors active:scale-95 pointer-events-auto"
+            className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center rounded-full hover:bg-white/10 text-blue-100/40 hover:text-blue-100 text-4xl md:text-5xl font-bold transition-colors active:scale-95 pointer-events-auto"
             title="Giảm điểm phụ"
           >
             −
@@ -137,7 +149,7 @@ export default function Home() {
           </span>
           <button 
             onClick={() => setLeftSubScore(s => s + 1)}
-            className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center rounded-full hover:bg-white/10 text-blue-100 text-4xl md:text-5xl font-bold transition-colors active:scale-95 pointer-events-auto"
+            className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center rounded-full hover:bg-white/10 text-blue-100/40 hover:text-blue-100 text-4xl md:text-5xl font-bold transition-colors active:scale-95 pointer-events-auto"
             title="Tăng điểm phụ"
           >
             +
@@ -164,7 +176,7 @@ export default function Home() {
           {/* Up Arrow */}
           <button 
             onClick={() => setRightMainScore(s => s + 1)}
-            className="w-16 h-16 md:w-24 md:h-24 flex items-center justify-center rounded-full hover:bg-white/10 text-white pointer-events-auto mb-[-2vh] z-10 transition-colors active:scale-95"
+            className="w-16 h-16 md:w-24 md:h-24 flex items-center justify-center rounded-full hover:bg-white/10 text-white/30 hover:text-white pointer-events-auto mb-[-2vh] z-10 transition-colors active:scale-95"
             title="Tăng điểm"
           >
             <ChevronUp size={64} strokeWidth={3} />
@@ -177,7 +189,7 @@ export default function Home() {
           {/* Down Arrow */}
           <button 
             onClick={() => setRightMainScore(s => Math.max(0, s - 1))}
-            className="w-16 h-16 md:w-24 md:h-24 flex items-center justify-center rounded-full hover:bg-white/10 text-white pointer-events-auto mt-[-2vh] z-10 transition-colors active:scale-95"
+            className="w-16 h-16 md:w-24 md:h-24 flex items-center justify-center rounded-full hover:bg-white/10 text-white/30 hover:text-white pointer-events-auto mt-[-2vh] z-10 transition-colors active:scale-95"
             title="Giảm điểm"
           >
             <ChevronDown size={64} strokeWidth={3} />
@@ -188,7 +200,7 @@ export default function Home() {
         <div className="w-full h-[25%] flex items-center justify-center gap-8 md:gap-14 bg-red-700/30">
           <button 
             onClick={() => setRightSubScore(s => Math.max(0, s - 1))}
-            className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center rounded-full hover:bg-white/10 text-red-100 text-4xl md:text-5xl font-bold transition-colors active:scale-95 pointer-events-auto"
+            className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center rounded-full hover:bg-white/10 text-red-100/40 hover:text-red-100 text-4xl md:text-5xl font-bold transition-colors active:scale-95 pointer-events-auto"
             title="Giảm điểm phụ"
           >
             −
@@ -198,7 +210,7 @@ export default function Home() {
           </span>
           <button 
             onClick={() => setRightSubScore(s => s + 1)}
-            className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center rounded-full hover:bg-white/10 text-red-100 text-4xl md:text-5xl font-bold transition-colors active:scale-95 pointer-events-auto"
+            className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center rounded-full hover:bg-white/10 text-red-100/40 hover:text-red-100 text-4xl md:text-5xl font-bold transition-colors active:scale-95 pointer-events-auto"
             title="Tăng điểm phụ"
           >
             +
