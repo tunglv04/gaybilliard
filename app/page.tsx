@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { RotateCcw } from "lucide-react";
+import { useState, useEffect } from "react";
+import { RotateCcw, Maximize, Minimize } from "lucide-react";
 import { PanInfo, motion } from "framer-motion";
 
 export default function Home() {
@@ -15,6 +15,25 @@ export default function Home() {
   const [rightSubScore, setRightSubScore] = useState(0);
 
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.log(`Error attempting to enable fullscreen: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
 
   const SWIPE_THRESHOLD = 30;
 
@@ -135,6 +154,15 @@ export default function Home() {
 
       {/* Center Divider */}
       <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[4px] bg-black/20 pointer-events-none z-0" />
+
+      {/* Fullscreen Button (Top Center) */}
+      <button
+        onClick={toggleFullscreen}
+        className="absolute top-4 md:top-6 left-1/2 -translate-x-1/2 rounded-full bg-black/60 hover:bg-black/80 p-3 md:p-4 text-white pointer-events-auto transition-all backdrop-blur-md shadow-xl border border-white/10 z-20"
+        title={isFullscreen ? "Thoát toàn màn hình" : "Toàn màn hình"}
+      >
+        {isFullscreen ? <Minimize size={28} strokeWidth={2.5} /> : <Maximize size={28} strokeWidth={2.5} />}
+      </button>
 
       {/* Reset Button (Bottom Center) */}
       <button
