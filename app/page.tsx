@@ -24,7 +24,16 @@ export default function Home() {
       setIsFullscreen(!!document.fullscreenElement);
     };
     document.addEventListener("fullscreenchange", onFullscreenChange);
-    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+
+    const preventTouchScroll = (e: TouchEvent) => {
+      e.preventDefault();
+    };
+    document.addEventListener("touchmove", preventTouchScroll, { passive: false });
+
+    return () => {
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
+      document.removeEventListener("touchmove", preventTouchScroll);
+    };
   }, []);
 
   const toggleFullscreen = () => {
@@ -48,14 +57,12 @@ export default function Home() {
 
   const handlePointerUp = (
     e: React.PointerEvent,
-    team: "left" | "right",
-    type: "main" | "sub"
+    team: "left" | "right"
   ) => {
     const input = pointerInputs.current[e.pointerId];
     if (!input) return;
 
     const deltaY = e.clientY - input.startY;
-    const deltaTime = Date.now() - input.startTime;
     delete pointerInputs.current[e.pointerId];
 
     const isSwipeUp = deltaY < -SWIPE_THRESHOLD;
@@ -63,21 +70,15 @@ export default function Home() {
 
     if (isSwipeUp) {
       if (team === "left") {
-        type === "main" ? setLeftMainScore(s => s + 1) : setLeftSubScore(s => s + 1);
+        setLeftMainScore(s => s + 1);
       } else {
-        type === "main" ? setRightMainScore(s => s + 1) : setRightSubScore(s => s + 1);
+        setRightMainScore(s => s + 1);
       }
     } else if (isSwipeDown) {
       if (team === "left") {
-        type === "main" ? setLeftMainScore(s => Math.max(0, s - 1)) : setLeftSubScore(s => Math.max(0, s - 1));
+        setLeftMainScore(s => Math.max(0, s - 1));
       } else {
-        type === "main" ? setRightMainScore(s => Math.max(0, s - 1)) : setRightSubScore(s => Math.max(0, s - 1));
-      }
-    } else if (deltaTime < 300 && Math.abs(deltaY) < 10) {
-      if (team === "left") {
-        type === "main" ? setLeftMainScore(s => s + 1) : setLeftSubScore(s => s + 1);
-      } else {
-        type === "main" ? setRightMainScore(s => s + 1) : setRightSubScore(s => s + 1);
+        setRightMainScore(s => Math.max(0, s - 1));
       }
     }
   };
@@ -110,7 +111,7 @@ export default function Home() {
         <motion.div
           className="flex-1 w-full flex items-center justify-center cursor-pointer"
           onPointerDown={handlePointerDown}
-          onPointerUp={(e) => handlePointerUp(e, "left", "main")}
+          onPointerUp={(e) => handlePointerUp(e, "left")}
         >
           <span className="text-[35vh] md:text-[45vh] leading-none font-bold text-white tracking-tighter drop-shadow-lg">
             {leftMainScore}
@@ -118,15 +119,23 @@ export default function Home() {
         </motion.div>
 
         {/* Sub Score Area */}
-        <motion.div
-          className="w-full h-[25%] flex items-center justify-center cursor-pointer bg-blue-700/30"
-          onPointerDown={handlePointerDown}
-          onPointerUp={(e) => handlePointerUp(e, "left", "sub")}
-        >
-          <span className="text-[12vh] md:text-[18vh] leading-none font-bold text-blue-100 drop-shadow-md pb-4">
+        <div className="w-full h-[25%] flex items-center justify-center gap-8 md:gap-14 bg-blue-700/30">
+          <button 
+            onClick={() => setLeftSubScore(s => Math.max(0, s - 1))}
+            className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center rounded-full bg-black/20 hover:bg-black/40 text-blue-100 text-4xl md:text-5xl font-bold transition-colors active:scale-95 pointer-events-auto"
+          >
+            −
+          </button>
+          <span className="text-[12vh] md:text-[18vh] leading-none font-bold text-blue-100 drop-shadow-md pb-4 min-w-[2ch] text-center">
             {leftSubScore}
           </span>
-        </motion.div>
+          <button 
+            onClick={() => setLeftSubScore(s => s + 1)}
+            className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center rounded-full bg-black/20 hover:bg-black/40 text-blue-100 text-4xl md:text-5xl font-bold transition-colors active:scale-95 pointer-events-auto"
+          >
+            +
+          </button>
+        </div>
       </div>
 
       {/* Right Team (Red) */}
@@ -147,7 +156,7 @@ export default function Home() {
         <motion.div
           className="flex-1 w-full flex items-center justify-center cursor-pointer"
           onPointerDown={handlePointerDown}
-          onPointerUp={(e) => handlePointerUp(e, "right", "main")}
+          onPointerUp={(e) => handlePointerUp(e, "right")}
         >
           <span className="text-[35vh] md:text-[45vh] leading-none font-bold text-white tracking-tighter drop-shadow-lg">
             {rightMainScore}
@@ -155,15 +164,23 @@ export default function Home() {
         </motion.div>
 
         {/* Sub Score Area */}
-        <motion.div
-          className="w-full h-[25%] flex items-center justify-center cursor-pointer bg-red-700/30"
-          onPointerDown={handlePointerDown}
-          onPointerUp={(e) => handlePointerUp(e, "right", "sub")}
-        >
-          <span className="text-[12vh] md:text-[18vh] leading-none font-bold text-red-100 drop-shadow-md pb-4">
+        <div className="w-full h-[25%] flex items-center justify-center gap-8 md:gap-14 bg-red-700/30">
+          <button 
+            onClick={() => setRightSubScore(s => Math.max(0, s - 1))}
+            className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center rounded-full bg-black/20 hover:bg-black/40 text-red-100 text-4xl md:text-5xl font-bold transition-colors active:scale-95 pointer-events-auto"
+          >
+            −
+          </button>
+          <span className="text-[12vh] md:text-[18vh] leading-none font-bold text-red-100 drop-shadow-md pb-4 min-w-[2ch] text-center">
             {rightSubScore}
           </span>
-        </motion.div>
+          <button 
+            onClick={() => setRightSubScore(s => s + 1)}
+            className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center rounded-full bg-black/20 hover:bg-black/40 text-red-100 text-4xl md:text-5xl font-bold transition-colors active:scale-95 pointer-events-auto"
+          >
+            +
+          </button>
+        </div>
       </div>
 
       {/* Center Divider */}
