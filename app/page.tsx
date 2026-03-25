@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { RotateCcw, Maximize, Minimize } from "lucide-react";
+import { RotateCcw, Maximize, Minimize, ChevronUp, ChevronDown } from "lucide-react";
 import { PanInfo, motion } from "framer-motion";
 
 export default function Home() {
@@ -126,25 +126,45 @@ export default function Home() {
       <div className="flex-1 bg-blue-600 flex flex-col items-center relative select-none touch-none">
         
         {/* Name Input */}
-        <div className="w-full pt-4 md:pt-6 pb-2 z-10 px-4">
+        <div className="absolute top-4 left-4 md:top-6 md:left-6 z-10 w-2/3 md:w-1/2">
           <input
             type="text"
             value={leftName}
             onChange={(e) => setLeftName(e.target.value)}
-            className="bg-transparent text-white text-3xl md:text-5xl font-bold text-center w-full outline-none placeholder:text-blue-300 drop-shadow-md"
+            className="bg-transparent text-white text-2xl md:text-3xl lg:text-4xl font-bold text-left w-full outline-none placeholder:text-blue-300 drop-shadow-md"
             placeholder="Tên đội 1"
           />
         </div>
 
         {/* Main Score Area */}
         <motion.div
-          className="flex-1 w-full flex items-center justify-center cursor-pointer"
+          className="flex-1 w-full flex flex-col items-center justify-center cursor-pointer relative"
           onPointerDown={handlePointerDown}
           onPointerUp={(e) => handlePointerUp(e, "left")}
         >
-          <span className="text-[35vh] md:text-[45vh] leading-none font-bold text-white tracking-tighter drop-shadow-lg">
+          {/* Up Arrow */}
+          <button 
+            onPointerDown={e => e.stopPropagation()}
+            onPointerUp={e => e.stopPropagation()}
+            onClick={() => setLeftMainScore(s => s + 1)}
+            className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center rounded-full hover:bg-white/10 text-white pointer-events-auto mb-[-2vh] z-10 transition-colors"
+          >
+            <ChevronUp size={48} strokeWidth={3} />
+          </button>
+
+          <span className="text-[35vh] md:text-[45vh] leading-none font-bold text-white tracking-tighter drop-shadow-lg pointer-events-none">
             {leftMainScore}
           </span>
+
+          {/* Down Arrow */}
+          <button 
+            onPointerDown={e => e.stopPropagation()}
+            onPointerUp={e => e.stopPropagation()}
+            onClick={() => setLeftMainScore(s => Math.max(0, s - 1))}
+            className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center rounded-full hover:bg-white/10 text-white pointer-events-auto mt-[-2vh] z-10 transition-colors"
+          >
+            <ChevronDown size={48} strokeWidth={3} />
+          </button>
         </motion.div>
 
         {/* Sub Score Area */}
@@ -171,25 +191,45 @@ export default function Home() {
       <div className="flex-1 bg-red-600 flex flex-col items-center relative select-none touch-none">
         
         {/* Name Input */}
-        <div className="w-full pt-4 md:pt-6 pb-2 z-10 px-4">
+        <div className="absolute top-4 right-4 md:top-6 md:right-6 z-10 w-2/3 md:w-1/2">
           <input
             type="text"
             value={rightName}
             onChange={(e) => setRightName(e.target.value)}
-            className="bg-transparent text-white text-3xl md:text-5xl font-bold text-center w-full outline-none placeholder:text-red-300 drop-shadow-md"
+            className="bg-transparent text-white text-2xl md:text-3xl lg:text-4xl font-bold text-right w-full outline-none placeholder:text-red-300 drop-shadow-md"
             placeholder="Tên đội 2"
           />
         </div>
 
         {/* Main Score Area */}
         <motion.div
-          className="flex-1 w-full flex items-center justify-center cursor-pointer"
+          className="flex-1 w-full flex flex-col items-center justify-center cursor-pointer relative"
           onPointerDown={handlePointerDown}
           onPointerUp={(e) => handlePointerUp(e, "right")}
         >
-          <span className="text-[35vh] md:text-[45vh] leading-none font-bold text-white tracking-tighter drop-shadow-lg">
+          {/* Up Arrow */}
+          <button 
+            onPointerDown={e => e.stopPropagation()}
+            onPointerUp={e => e.stopPropagation()}
+            onClick={() => setRightMainScore(s => s + 1)}
+            className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center rounded-full hover:bg-white/10 text-white pointer-events-auto mb-[-2vh] z-10 transition-colors"
+          >
+            <ChevronUp size={48} strokeWidth={3} />
+          </button>
+
+          <span className="text-[35vh] md:text-[45vh] leading-none font-bold text-white tracking-tighter drop-shadow-lg pointer-events-none">
             {rightMainScore}
           </span>
+
+          {/* Down Arrow */}
+          <button 
+            onPointerDown={e => e.stopPropagation()}
+            onPointerUp={e => e.stopPropagation()}
+            onClick={() => setRightMainScore(s => Math.max(0, s - 1))}
+            className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center rounded-full hover:bg-white/10 text-white pointer-events-auto mt-[-2vh] z-10 transition-colors"
+          >
+            <ChevronDown size={48} strokeWidth={3} />
+          </button>
         </motion.div>
 
         {/* Sub Score Area */}
