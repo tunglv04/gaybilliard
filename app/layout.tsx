@@ -1,20 +1,25 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const inter = Inter({
+  variable: "--font-geist-sans", // Keeping variable name same to avoid globals.css edits if defined
+  subsets: ["latin", "vietnamese"],
 });
 
-const geistMono = Geist_Mono({
+const robotoMono = Roboto_Mono({
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  subsets: ["latin", "vietnamese"],
 });
 
 export const metadata: Metadata = {
   title: "Billiard Scoreboard",
   description: "A minimalist billiard scoreboard app",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Billiard",
+  },
 };
 
 export const viewport: Viewport = {
@@ -33,7 +38,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased overscroll-none overflow-hidden touch-none select-none fixed inset-0`}
+        className={`${inter.variable} ${robotoMono.variable} antialiased overscroll-none overflow-hidden touch-none select-none w-full h-[100dvh]`}
       >
         {children}
       </body>
