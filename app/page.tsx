@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { 
-  Play, Volume2, VolumeX, Sun, Maximize, Minimize, Zap 
+  Play, RotateCcw, Volume2, VolumeX, Sun, Maximize, Minimize, Zap 
 } from "lucide-react";
 import { soundManager } from "@/lib/audio";
 
@@ -67,7 +67,7 @@ export default function Home() {
     };
   }, []);
 
-  // Keyboard shortcut listener (Space / Enter -> Start 30s, E / + -> Extension)
+  // Keyboard shortcut listener (Space / Enter -> Start 30s, E / + -> Extension, R -> Reset)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Space" || e.code === "Enter") {
@@ -76,6 +76,9 @@ export default function Home() {
       } else if (e.key === "e" || e.key === "E" || e.key === "+") {
         e.preventDefault();
         addExtension30s();
+      } else if (e.key === "r" || e.key === "R") {
+        e.preventDefault();
+        handleReset();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -83,23 +86,25 @@ export default function Home() {
   }, [hasUsedExtension]);
 
   // Main countdown ticker
-  // 5 seconds voice reading ("five" to "one") + 0s finish chime & "Time's Up" voice!
+  // Beep sound from 10s down to 6s + Voice reading from 5s down to 1s + Finish chime at 0s
   useEffect(() => {
     let interval: NodeJS.Timeout;
 
     if (isRunning && timeLeft > 0) {
       interval = setInterval(() => {
-        // Keep AudioContext active during countdown
         soundManager.initCtx();
 
         setTimeLeft((prev) => {
           const next = prev - 1;
 
-          if (next <= 5 && next > 0) {
-            // Speak "five", "four", "three", "two", "one"
+          if (next <= 10 && next >= 6) {
+            // Beep audio tick for 10, 9, 8, 7, 6 seconds
+            soundManager.play10to6Beep();
+          } else if (next <= 5 && next > 0) {
+            // Speak "five", "four", "three", "two", "one" for 5, 4, 3, 2, 1 seconds
             soundManager.speakCountdownNumber(next);
           } else if (next === 0) {
-            // Guaranteed finish audio chime + "Time's Up" speech at 0s!
+            // Loud finish chime + "Time's Up" voice at 0s!
             soundManager.playClearFinishSound();
             setIsRunning(false);
           }
@@ -132,6 +137,15 @@ export default function Home() {
       setTotalMaxTime((currentMax) => Math.max(currentMax, updated));
       return updated;
     });
+  };
+
+  // Reset button action: resets timer to 30s, stops running, enables Extension button
+  const handleReset = () => {
+    soundManager.initCtx();
+    setTimeLeft(DEFAULT_TIME);
+    setTotalMaxTime(DEFAULT_TIME);
+    setIsRunning(false);
+    setHasUsedExtension(false);
   };
 
   const toggleMute = () => {
@@ -167,14 +181,12 @@ export default function Home() {
   const toggleFullscreen = () => {
     soundManager.initCtx();
     
-    // Check if device is iOS (iPhone/iPad)
     const isIOS =
       typeof navigator !== "undefined" &&
       (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
 
     if (isIOS) {
-      // Toggle CSS fullscreen overlay directly for iOS Safari
       setIsFullscreen((prev) => !prev);
       if (typeof window !== "undefined") {
         window.scrollTo(0, 0);
@@ -300,7 +312,7 @@ export default function Home() {
         <div className="bg-zinc-900/90 border border-zinc-800/80 rounded-3xl p-5 sm:p-8 backdrop-blur-2xl shadow-2xl w-full flex flex-col items-center justify-center text-center relative overflow-hidden">
           
           {/* Circular Progress & Giant Number Counter */}
-          <div className="relative w-[68vw] max-w-[290px] sm:max-w-[340px] aspect-square flex items-center justify-center my-2 sm:my-4">
+          <div className="relative w-[65vw] max-w-[280px] sm:max-w-[330px] aspect-square flex items-center justify-center my-2 sm:my-3">
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
               <circle
                 cx="50"
@@ -327,7 +339,7 @@ export default function Home() {
 
             {/* Huge Number */}
             <div className="absolute flex flex-col items-center justify-center">
-              <span className={`font-mono text-7xl sm:text-8xl md:text-[9.5rem] font-black leading-none tracking-tighter transition-all ${getTimerColor()}`}>
+              <span className={`font-mono text-7xl sm:text-8xl md:text-[9rem] font-black leading-none tracking-tighter transition-all ${getTimerColor()}`}>
                 {timeLeft}
               </span>
               <span className="text-[10px] sm:text-xs font-extrabold uppercase tracking-widest text-zinc-500 mt-2">
@@ -336,35 +348,48 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Action Buttons: START & EXTENSION */}
-          <div className="mt-4 sm:mt-6 flex flex-col gap-3 w-full">
-            {/* Start Button: Speaks "Start", resets to 30s & extension state, starts counting down! */}
+          {/* Action Buttons: START, EXTENSION & RESET */}
+          <div className="mt-4 sm:mt-5 flex flex-col gap-2.5 w-full">
+            {/* Start Button */}
             <button
               onClick={handleStart}
-              className="flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 hover:from-emerald-300 hover:to-blue-400 text-zinc-950 font-black text-2xl sm:text-3xl py-4 sm:py-5 rounded-2xl shadow-xl shadow-cyan-500/20 active:scale-95 transition-all w-full border border-cyan-300/40"
+              className="flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 hover:from-emerald-300 hover:to-blue-400 text-zinc-950 font-black text-2xl sm:text-3xl py-3.5 sm:py-4 rounded-2xl shadow-xl shadow-cyan-500/20 active:scale-95 transition-all w-full border border-cyan-300/40"
             >
-              <Play size={28} className="fill-zinc-950 w-7 h-7 sm:w-8 sm:h-8" />
+              <Play size={26} className="fill-zinc-950 w-6 h-6 sm:w-7 sm:h-7" />
               <span>Start</span>
             </button>
 
-            {/* Extension Button: Allowed ONLY ONCE per turn! Dimmed out after use */}
-            <button
-              onClick={addExtension30s}
-              disabled={hasUsedExtension}
-              className={`flex items-center justify-center font-black text-xl sm:text-2xl py-4 sm:py-5 rounded-2xl shadow-xl transition-all w-full border ${
-                hasUsedExtension
-                  ? "bg-zinc-800/60 text-zinc-500 border-zinc-700/50 cursor-not-allowed opacity-40 shadow-none"
-                  : "bg-purple-600 hover:bg-purple-500 text-white shadow-purple-600/20 border-purple-400/30 active:scale-95"
-              }`}
-            >
-              <span>{hasUsedExtension ? "Extension (Used)" : "Extension"}</span>
-            </button>
+            {/* Row of Extension & Reset */}
+            <div className="grid grid-cols-2 gap-2.5 w-full">
+              {/* Extension Button */}
+              <button
+                onClick={addExtension30s}
+                disabled={hasUsedExtension}
+                className={`flex items-center justify-center font-black text-lg sm:text-xl py-3.5 sm:py-4 rounded-2xl shadow-xl transition-all border ${
+                  hasUsedExtension
+                    ? "bg-zinc-800/60 text-zinc-500 border-zinc-700/50 cursor-not-allowed opacity-40 shadow-none"
+                    : "bg-purple-600 hover:bg-purple-500 text-white shadow-purple-600/20 border-purple-400/30 active:scale-95"
+                }`}
+              >
+                <span>{hasUsedExtension ? "Extension (Used)" : "Extension"}</span>
+              </button>
+
+              {/* Reset Button */}
+              <button
+                onClick={handleReset}
+                className="flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold text-lg sm:text-xl py-3.5 sm:py-4 rounded-2xl transition-all active:scale-95 border border-zinc-700/60"
+              >
+                <RotateCcw size={20} />
+                <span>Reset</span>
+              </button>
+            </div>
           </div>
 
           {/* Shortcut Keys Guide */}
-          <div className="mt-6 text-[10px] sm:text-xs font-semibold text-zinc-500 flex flex-wrap justify-center gap-4">
-            <span><kbd className="bg-zinc-800 text-zinc-300 px-1.5 py-0.5 rounded font-mono">Space / Enter</kbd> Start 30s</span>
+          <div className="mt-5 text-[10px] sm:text-xs font-semibold text-zinc-500 flex flex-wrap justify-center gap-3 sm:gap-4">
+            <span><kbd className="bg-zinc-800 text-zinc-300 px-1.5 py-0.5 rounded font-mono">Enter</kbd> Start</span>
             <span><kbd className="bg-zinc-800 text-zinc-300 px-1.5 py-0.5 rounded font-mono">E / +</kbd> Extension</span>
+            <span><kbd className="bg-zinc-800 text-zinc-300 px-1.5 py-0.5 rounded font-mono">R</kbd> Reset</span>
           </div>
 
         </div>

@@ -66,6 +66,33 @@ class SoundManager {
     }
   }
 
+  // Audio Beep for 10s down to 6s (10, 9, 8, 7, 6)
+  public play10to6Beep() {
+    if (this.isMuted) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(750, this.ctx.currentTime); // 750 Hz clean tick
+
+      gain.gain.setValueAtTime(0, this.ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.25, this.ctx.currentTime + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.08);
+    } catch (e) {
+      console.warn("10to6 beep failed:", e);
+    }
+  }
+
   // Action: Start (ONLY Voice "Start")
   public playStartSpeech() {
     this.initCtx();
