@@ -40,17 +40,29 @@ export default function Home() {
     window.addEventListener("keydown", unlockAudio, { once: true });
   }, []);
 
-  // Fullscreen state listener
+  // Sync Native Fullscreen State
   useEffect(() => {
     const handleFSChange = () => {
       const doc = document as any;
-      setIsFullscreen(!!(doc.fullscreenElement || doc.webkitFullscreenElement));
+      const isFs = !!(
+        doc.fullscreenElement ||
+        doc.webkitFullscreenElement ||
+        doc.mozFullScreenElement ||
+        doc.msFullscreenElement
+      );
+      setIsFullscreen(isFs);
     };
+
     document.addEventListener("fullscreenchange", handleFSChange);
     document.addEventListener("webkitfullscreenchange", handleFSChange);
+    document.addEventListener("mozfullscreenchange", handleFSChange);
+    document.addEventListener("MSFullscreenChange", handleFSChange);
+
     return () => {
       document.removeEventListener("fullscreenchange", handleFSChange);
       document.removeEventListener("webkitfullscreenchange", handleFSChange);
+      document.removeEventListener("mozfullscreenchange", handleFSChange);
+      document.removeEventListener("MSFullscreenChange", handleFSChange);
     };
   }, []);
 
@@ -70,7 +82,7 @@ export default function Home() {
   }, []);
 
   // Main countdown ticker
-  // 5 seconds voice reading ("five" to "one") + Clear double-chime at 0s
+  // 5 seconds voice reading ("five" to "one") + Loud 3-stroke alarm chime at 0s
   useEffect(() => {
     let interval: NodeJS.Timeout;
 
@@ -80,10 +92,10 @@ export default function Home() {
           const next = prev - 1;
 
           if (next <= 5 && next > 0) {
-            // Beep tone + Speak "five", "four", "three", "two", "one"
+            // Speak "five", "four", "three", "two", "one"
             soundManager.speakCountdownNumber(next);
           } else if (next === 0) {
-            // Clear double-chime completion sound
+            // Play loud clear 3-stroke finish chime at 0s!
             soundManager.playClearFinishSound();
             setIsRunning(false);
           }
@@ -118,11 +130,11 @@ export default function Home() {
     const nextMute = !isMuted;
     setIsMuted(nextMute);
     soundManager.setMuted(nextMute);
-    if (!nextMute) soundManager.playStartAudioTone();
+    if (!nextMute) soundManager.initCtx();
   };
 
   const toggleWakeLock = async () => {
-    soundManager.playStartAudioTone();
+    soundManager.initCtx();
     try {
       if (!isWakeLockActive) {
         if ("wakeLock" in navigator) {
@@ -143,17 +155,46 @@ export default function Home() {
     }
   };
 
+  // Robust Fullscreen Toggle (Native HTML5 + CSS overlay fallback for iOS Safari)
   const toggleFullscreen = () => {
-    soundManager.playStartAudioTone();
-    const docElm = document.documentElement as any;
+    soundManager.initCtx();
     const doc = document as any;
+    const docElm = document.documentElement as any;
 
-    if (!doc.fullscreenElement && !doc.webkitFullscreenElement) {
-      const requestFS = docElm.requestFullscreen || docElm.webkitRequestFullscreen;
-      if (requestFS) requestFS.call(docElm);
+    const isFs = !!(
+      doc.fullscreenElement ||
+      doc.webkitFullscreenElement ||
+      doc.mozFullScreenElement ||
+      doc.msFullscreenElement ||
+      isFullscreen
+    );
+
+    if (!isFs) {
+      const requestFS =
+        docElm.requestFullscreen ||
+        docElm.webkitRequestFullscreen ||
+        docElm.mozRequestFullScreen ||
+        docElm.msRequestFullscreen;
+
+      if (requestFS) {
+        requestFS.call(docElm).catch(() => {
+          setIsFullscreen(true);
+        });
+      }
+      setIsFullscreen(true);
     } else {
-      const exitFS = doc.exitFullscreen || doc.webkitExitFullscreen;
-      if (exitFS) exitFS.call(doc);
+      const exitFS =
+        doc.exitFullscreen ||
+        doc.webkitExitFullscreen ||
+        doc.mozCancelFullScreen ||
+        doc.msExitFullscreen;
+
+      if (exitFS) {
+        try {
+          doc.exitFullscreen ? doc.exitFullscreen().catch(() => {}) : exitFS.call(doc);
+        } catch (e) {}
+      }
+      setIsFullscreen(false);
     }
   };
 
@@ -167,7 +208,13 @@ export default function Home() {
   };
 
   return (
-    <main className="h-[100dvh] w-full bg-[#090d16] text-zinc-100 font-sans flex flex-col justify-between p-4 sm:p-6 select-none overflow-hidden touch-manipulation">
+    <main
+      className={`w-full bg-[#090d16] text-zinc-100 font-sans flex flex-col justify-between p-4 sm:p-6 select-none overflow-hidden touch-manipulation ${
+        isFullscreen
+          ? "fixed inset-0 z-[9999] h-[100dvh] w-screen"
+          : "h-[100dvh]"
+      }`}
+    >
       {/* Header Utilities */}
       <header className="flex items-center justify-between max-w-xl mx-auto w-full pt-1">
         <div className="flex items-center gap-2.5">
@@ -213,7 +260,11 @@ export default function Home() {
           {/* Fullscreen Toggle */}
           <button
             onClick={toggleFullscreen}
-            className="p-2.5 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white rounded-xl transition-colors"
+            className={`p-2.5 border rounded-xl transition-colors ${
+              isFullscreen
+                ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
+                : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white"
+            }`}
             title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
           >
             {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
@@ -264,7 +315,7 @@ export default function Home() {
 
           {/* Action Buttons: START & EXTENSION */}
           <div className="mt-4 sm:mt-6 flex flex-col gap-3 w-full">
-            {/* Start Button: Speaks "Start" & plays cue tone, resets to 30s & starts counting down! */}
+            {/* Start Button: Speaks "Start", resets to 30s & starts counting down! */}
             <button
               onClick={handleStart}
               className="flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 hover:from-emerald-300 hover:to-blue-400 text-zinc-950 font-black text-2xl sm:text-3xl py-4 sm:py-5 rounded-2xl shadow-xl shadow-cyan-500/20 active:scale-95 transition-all w-full border border-cyan-300/40"

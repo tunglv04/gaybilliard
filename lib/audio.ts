@@ -94,7 +94,7 @@ class SoundManager {
     }
   }
 
-  // Action: Time's Up Finish Sound at 0s (Double Stroke Alarm Chime)
+  // Action: Time's Up Finish Sound at 0s (Loud 3-stroke alarm chime)
   public playClearFinishSound() {
     if (this.isMuted) return;
     try {
@@ -102,7 +102,8 @@ class SoundManager {
       if (!this.ctx) return;
 
       const now = this.ctx.currentTime;
-      [0, 0.22].forEach((offset) => {
+      // 3 rapid punchy dual-tone chimes (E5 & A5)
+      [0, 0.18, 0.36].forEach((offset) => {
         if (!this.ctx) return;
         const osc1 = this.ctx.createOscillator();
         const osc2 = this.ctx.createOscillator();
@@ -115,8 +116,8 @@ class SoundManager {
         osc2.frequency.setValueAtTime(880.0, now + offset); // A5
 
         gain.gain.setValueAtTime(0, now + offset);
-        gain.gain.linearRampToValueAtTime(0.4, now + offset + 0.015);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.2);
+        gain.gain.linearRampToValueAtTime(0.5, now + offset + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.15);
 
         osc1.connect(gain);
         osc2.connect(gain);
@@ -124,8 +125,8 @@ class SoundManager {
 
         osc1.start(now + offset);
         osc2.start(now + offset);
-        osc1.stop(now + offset + 0.2);
-        osc2.stop(now + offset + 0.2);
+        osc1.stop(now + offset + 0.15);
+        osc2.stop(now + offset + 0.15);
       });
     } catch (e) {
       console.warn("Clear finish sound failed:", e);
