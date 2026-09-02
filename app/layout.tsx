@@ -1,33 +1,20 @@
-import type { Metadata, Viewport } from "next";
-import { Inter, Roboto_Mono } from "next/font/google";
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-geist-sans", // Keeping variable name same to avoid globals.css edits if defined
-  subsets: ["latin", "vietnamese"],
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
 });
 
-const robotoMono = Roboto_Mono({
+const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
-  subsets: ["latin", "vietnamese"],
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "Billiard Scoreboard",
-  description: "A minimalist billiard scoreboard app",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "Billiard",
-  },
-};
-
-export const viewport: Viewport = {
-  themeColor: "black",
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  title: "Billiard Timer Pro - Phần Mềm Bấm Giờ & Tính Tiền Bàn Bida",
+  description: "Dự án web bấm giờ bàn bida chuyên nghiệp, đếm ngược shot clock thi đấu, đếm ngược thời gian và đồng hồ bấm giờ thể thao.",
 };
 
 export default function RootLayout({
@@ -36,12 +23,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${inter.variable} ${robotoMono.variable} antialiased overscroll-none overflow-hidden touch-none select-none w-full h-[100dvh]`}
-      >
-        {children}
-      </body>
+    <html
+      lang="vi"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
+      <body className="min-h-full flex flex-col bg-[#090d16] text-zinc-100">{children}</body>
     </html>
   );
 }
