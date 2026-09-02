@@ -51,7 +51,7 @@ export default function Home() {
         doc.mozFullScreenElement ||
         doc.msFullscreenElement
       );
-      setIsFullscreen(isFs);
+      if (isFs) setIsFullscreen(true);
     };
 
     document.addEventListener("fullscreenchange", handleFSChange);
@@ -83,12 +83,15 @@ export default function Home() {
   }, [hasUsedExtension]);
 
   // Main countdown ticker
-  // 5 seconds voice reading ("five" to "one") + Loud 3-stroke alarm chime at 0s
+  // 5 seconds voice reading ("five" to "one") + 0s finish chime & "Time's Up" voice!
   useEffect(() => {
     let interval: NodeJS.Timeout;
 
     if (isRunning && timeLeft > 0) {
       interval = setInterval(() => {
+        // Keep AudioContext active during countdown
+        soundManager.initCtx();
+
         setTimeLeft((prev) => {
           const next = prev - 1;
 
@@ -96,7 +99,7 @@ export default function Home() {
             // Speak "five", "four", "three", "two", "one"
             soundManager.speakCountdownNumber(next);
           } else if (next === 0) {
-            // Play loud clear 3-stroke finish chime at 0s!
+            // Guaranteed finish audio chime + "Time's Up" speech at 0s!
             soundManager.playClearFinishSound();
             setIsRunning(false);
           }
@@ -160,12 +163,27 @@ export default function Home() {
     }
   };
 
-  // Robust Fullscreen Toggle (Native HTML5 + CSS overlay fallback for iOS Safari)
+  // Robust Cross-Device Fullscreen (Supports iPhone iOS Safari + Android + Desktop)
   const toggleFullscreen = () => {
     soundManager.initCtx();
+    
+    // Check if device is iOS (iPhone/iPad)
+    const isIOS =
+      typeof navigator !== "undefined" &&
+      (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+
+    if (isIOS) {
+      // Toggle CSS fullscreen overlay directly for iOS Safari
+      setIsFullscreen((prev) => !prev);
+      if (typeof window !== "undefined") {
+        window.scrollTo(0, 0);
+      }
+      return;
+    }
+
     const doc = document as any;
     const docElm = document.documentElement as any;
-
     const isFs = !!(
       doc.fullscreenElement ||
       doc.webkitFullscreenElement ||
@@ -214,9 +232,9 @@ export default function Home() {
 
   return (
     <main
-      className={`w-full bg-[#090d16] text-zinc-100 font-sans flex flex-col justify-between p-4 sm:p-6 select-none overflow-hidden touch-manipulation ${
+      className={`w-full bg-[#090d16] text-zinc-100 font-sans flex flex-col justify-between p-4 sm:p-6 select-none overflow-hidden touch-manipulation transition-all duration-200 ${
         isFullscreen
-          ? "fixed inset-0 z-[9999] h-[100dvh] w-screen"
+          ? "fixed inset-0 z-[99999] h-[100dvh] w-screen bg-[#090d16]"
           : "h-[100dvh]"
       }`}
     >

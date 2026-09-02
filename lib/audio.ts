@@ -14,7 +14,7 @@ class SoundManager {
         }
       }
       if (this.ctx && this.ctx.state === "suspended") {
-        this.ctx.resume();
+        this.ctx.resume().catch(() => {});
       }
     } catch (e) {
       console.warn("AudioContext init error:", e);
@@ -94,40 +94,45 @@ class SoundManager {
     }
   }
 
-  // Action: Time's Up Finish Sound at 0s (Loud 3-stroke alarm chime)
+  // Action: Time's Up Finish Sound at 0s (Audio Chime Tone + Voice "Time's Up")
   public playClearFinishSound() {
     if (this.isMuted) return;
     try {
       this.initCtx();
-      if (!this.ctx) return;
+      if (this.ctx && this.ctx.state === "suspended") {
+        this.ctx.resume().catch(() => {});
+      }
 
-      const now = this.ctx.currentTime;
-      // 3 rapid punchy dual-tone chimes (E5 & A5)
-      [0, 0.18, 0.36].forEach((offset) => {
-        if (!this.ctx) return;
-        const osc1 = this.ctx.createOscillator();
-        const osc2 = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
+      // 1. Play loud 3-stroke audio finish chime
+      if (this.ctx) {
+        const now = this.ctx.currentTime;
+        [0, 0.2, 0.4].forEach((offset) => {
+          if (!this.ctx) return;
+          const osc1 = this.ctx.createOscillator();
+          const osc2 = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
 
-        osc1.type = "sine";
-        osc2.type = "triangle";
+          osc1.type = "sine";
+          osc2.type = "sawtooth";
 
-        osc1.frequency.setValueAtTime(659.25, now + offset); // E5
-        osc2.frequency.setValueAtTime(880.0, now + offset); // A5
+          osc1.frequency.setValueAtTime(659.25, now + offset); // E5
+          osc2.frequency.setValueAtTime(880.0, now + offset); // A5
 
-        gain.gain.setValueAtTime(0, now + offset);
-        gain.gain.linearRampToValueAtTime(0.5, now + offset + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.15);
+          gain.gain.setValueAtTime(0.5, now + offset);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.25);
 
-        osc1.connect(gain);
-        osc2.connect(gain);
-        gain.connect(this.ctx.destination);
+          osc1.connect(gain);
+          osc2.connect(gain);
+          gain.connect(this.ctx.destination);
 
-        osc1.start(now + offset);
-        osc2.start(now + offset);
-        osc1.stop(now + offset + 0.15);
-        osc2.stop(now + offset + 0.15);
-      });
+          osc1.start(now + offset);
+          osc2.start(now + offset);
+          osc1.stop(now + offset + 0.25);
+        });
+      }
+
+      // 2. Speak "Time's Up!" voice
+      this.speakText("Time's Up");
     } catch (e) {
       console.warn("Clear finish sound failed:", e);
     }
