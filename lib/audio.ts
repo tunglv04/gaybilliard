@@ -73,21 +73,29 @@ class SoundManager {
       this.initCtx();
       if (!this.ctx) return;
 
+      const now = this.ctx.currentTime;
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
 
       osc.type = "sine";
-      osc.frequency.setValueAtTime(750, this.ctx.currentTime); // 750 Hz clean tick
+      osc.frequency.setValueAtTime(750, now); // 750 Hz clean tick
 
-      gain.gain.setValueAtTime(0, this.ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.25, this.ctx.currentTime + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.2, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
 
       osc.connect(gain);
       gain.connect(this.ctx.destination);
 
-      osc.start();
-      osc.stop(this.ctx.currentTime + 0.08);
+      osc.onended = () => {
+        try {
+          osc.disconnect();
+          gain.disconnect();
+        } catch (e) {}
+      };
+
+      osc.start(now);
+      osc.stop(now + 0.07);
     } catch (e) {
       console.warn("10to6 beep failed:", e);
     }
@@ -130,10 +138,10 @@ class SoundManager {
         this.ctx.resume().catch(() => {});
       }
 
-      // 1. Play loud 3-stroke audio finish chime
+      // Play loud 3-stroke audio finish chime
       if (this.ctx) {
         const now = this.ctx.currentTime;
-        [0, 0.2, 0.4].forEach((offset) => {
+        [0, 0.18, 0.36].forEach((offset) => {
           if (!this.ctx) return;
           const osc1 = this.ctx.createOscillator();
           const osc2 = this.ctx.createOscillator();
@@ -145,20 +153,30 @@ class SoundManager {
           osc1.frequency.setValueAtTime(659.25, now + offset); // E5
           osc2.frequency.setValueAtTime(880.0, now + offset); // A5
 
-          gain.gain.setValueAtTime(0.5, now + offset);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.25);
+          gain.gain.setValueAtTime(0, now + offset);
+          gain.gain.linearRampToValueAtTime(0.4, now + offset + 0.015);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.15);
 
           osc1.connect(gain);
           osc2.connect(gain);
           gain.connect(this.ctx.destination);
 
+          osc1.onended = () => {
+            try {
+              osc1.disconnect();
+              osc2.disconnect();
+              gain.disconnect();
+            } catch (e) {}
+          };
+
           osc1.start(now + offset);
           osc2.start(now + offset);
-          osc1.stop(now + offset + 0.25);
+          osc1.stop(now + offset + 0.15);
+          osc2.stop(now + offset + 0.15);
         });
       }
 
-      // 2. Speak "Time's Up!" voice
+      // Speak "Time's Up!" voice
       this.speakText("Time's Up");
     } catch (e) {
       console.warn("Clear finish sound failed:", e);

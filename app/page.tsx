@@ -83,7 +83,7 @@ export default function Home() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [hasUsedExtension]);
+  }, [isRunning, hasUsedExtension]);
 
   // Main countdown ticker
   // Beep sound from 10s down to 6s + Voice reading from 5s down to 1s + Finish chime at 0s
@@ -92,8 +92,6 @@ export default function Home() {
 
     if (isRunning && timeLeft > 0) {
       interval = setInterval(() => {
-        soundManager.initCtx();
-
         setTimeLeft((prev) => {
           const next = prev - 1;
 
@@ -126,9 +124,9 @@ export default function Home() {
     setHasUsedExtension(false); // Reset extension for the new turn!
   };
 
-  // Extension button action: allowed ONLY ONCE per Start cycle!
+  // Extension button action: allowed ONLY ONCE per turn, and ONLY when timer is running!
   const addExtension30s = () => {
-    if (hasUsedExtension) return; // Single extension limit
+    if (!isRunning || hasUsedExtension) return; // Cannot extend if idle or already used
 
     soundManager.playExtensionSpeech();
     setHasUsedExtension(true);
@@ -232,6 +230,9 @@ export default function Home() {
       setIsFullscreen(false);
     }
   };
+
+  // Extension button is disabled if timer hasn't started OR extension was already used
+  const isExtensionDisabled = !isRunning || hasUsedExtension;
 
   // Dynamic progress & colors
   const progressPercent = totalMaxTime > 0 ? Math.min(100, Math.max(0, (timeLeft / totalMaxTime) * 100)) : 0;
@@ -361,12 +362,12 @@ export default function Home() {
 
             {/* Row of Extension & Reset */}
             <div className="grid grid-cols-2 gap-2.5 w-full">
-              {/* Extension Button */}
+              {/* Extension Button: Disabled when not running OR already used */}
               <button
                 onClick={addExtension30s}
-                disabled={hasUsedExtension}
+                disabled={isExtensionDisabled}
                 className={`flex items-center justify-center font-black text-lg sm:text-xl py-3.5 sm:py-4 rounded-2xl shadow-xl transition-all border ${
-                  hasUsedExtension
+                  isExtensionDisabled
                     ? "bg-zinc-800/60 text-zinc-500 border-zinc-700/50 cursor-not-allowed opacity-40 shadow-none"
                     : "bg-purple-600 hover:bg-purple-500 text-white shadow-purple-600/20 border-purple-400/30 active:scale-95"
                 }`}
