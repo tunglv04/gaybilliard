@@ -11,6 +11,7 @@ export default function Home() {
   const [timeLeft, setTimeLeft] = useState<number>(DEFAULT_TIME);
   const [totalMaxTime, setTotalMaxTime] = useState<number>(DEFAULT_TIME);
   const [isRunning, setIsRunning] = useState<boolean>(false);
+  const [hasUsedExtension, setHasUsedExtension] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [isWakeLockActive, setIsWakeLockActive] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
@@ -79,7 +80,7 @@ export default function Home() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [hasUsedExtension]);
 
   // Main countdown ticker
   // 5 seconds voice reading ("five" to "one") + Loud 3-stroke alarm chime at 0s
@@ -108,17 +109,21 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [isRunning, timeLeft]);
 
-  // Start button action: speaks "Start", resets to 30s, starts countdown!
+  // Start button action: speaks "Start", resets to 30s, resets extension usage, starts countdown!
   const handleStart = () => {
     soundManager.playStartSpeech();
     setTimeLeft(DEFAULT_TIME);
     setTotalMaxTime(DEFAULT_TIME);
     setIsRunning(true);
+    setHasUsedExtension(false); // Reset extension for the new turn!
   };
 
-  // Extension button action: speaks "Extension" and adds 30 seconds
+  // Extension button action: allowed ONLY ONCE per Start cycle!
   const addExtension30s = () => {
+    if (hasUsedExtension) return; // Single extension limit
+
     soundManager.playExtensionSpeech();
+    setHasUsedExtension(true);
     setTimeLeft((prev) => {
       const updated = prev + 30;
       setTotalMaxTime((currentMax) => Math.max(currentMax, updated));
@@ -315,7 +320,7 @@ export default function Home() {
 
           {/* Action Buttons: START & EXTENSION */}
           <div className="mt-4 sm:mt-6 flex flex-col gap-3 w-full">
-            {/* Start Button: Speaks "Start", resets to 30s & starts counting down! */}
+            {/* Start Button: Speaks "Start", resets to 30s & extension state, starts counting down! */}
             <button
               onClick={handleStart}
               className="flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 hover:from-emerald-300 hover:to-blue-400 text-zinc-950 font-black text-2xl sm:text-3xl py-4 sm:py-5 rounded-2xl shadow-xl shadow-cyan-500/20 active:scale-95 transition-all w-full border border-cyan-300/40"
@@ -324,12 +329,17 @@ export default function Home() {
               <span>Start</span>
             </button>
 
-            {/* Extension Button: NO '+' icon, ONLY text "Extension" */}
+            {/* Extension Button: Allowed ONLY ONCE per turn! Dimmed out after use */}
             <button
               onClick={addExtension30s}
-              className="flex items-center justify-center bg-purple-600 hover:bg-purple-500 text-white font-black text-xl sm:text-2xl py-4 sm:py-5 rounded-2xl shadow-xl shadow-purple-600/20 active:scale-95 transition-all w-full border border-purple-400/30"
+              disabled={hasUsedExtension}
+              className={`flex items-center justify-center font-black text-xl sm:text-2xl py-4 sm:py-5 rounded-2xl shadow-xl transition-all w-full border ${
+                hasUsedExtension
+                  ? "bg-zinc-800/60 text-zinc-500 border-zinc-700/50 cursor-not-allowed opacity-40 shadow-none"
+                  : "bg-purple-600 hover:bg-purple-500 text-white shadow-purple-600/20 border-purple-400/30 active:scale-95"
+              }`}
             >
-              <span>Extension</span>
+              <span>{hasUsedExtension ? "Extension (Used)" : "Extension"}</span>
             </button>
           </div>
 
